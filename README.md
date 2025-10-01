@@ -10,7 +10,7 @@ This API provides basic endpoints for a social media application. The available 
 > Swagger UI for Dokumentation: [`/swagger/index.html`](http://localhost:8080/swagger/index.html)
 
 ## DESIGN SYSTEM
-![alt text](sistemDesign.png)
+![sistem Design](/SistemDesign/sistemDesign.png)
 
 ## 🚀 Features
 - 🔐 JWT Authentication (Login & Register)
