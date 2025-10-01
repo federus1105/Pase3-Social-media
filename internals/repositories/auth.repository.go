@@ -20,6 +20,14 @@ func NewAuthRepository(db *pgxpool.Pool) *AuthRepository {
 }
 
 func (r *AuthRepository) Register(ctx context.Context, user models.UserRegister) (models.UserRegister, error) {
+	// Start transaction
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		log.Println("Failed to begin transaction:", err)
+		return models.UserRegister{}, err
+	}
+	defer tx.Rollback(ctx)
+
 	// Hash password
 	hc := pkg.NewHashConfig()
 	hc.UseRecommended()
@@ -31,11 +39,24 @@ func (r *AuthRepository) Register(ctx context.Context, user models.UserRegister)
 
 	sql := `INSERT INTO users (email, password) VALUES ($1, $2) RETURNING userid, email, password`
 	values := []any{user.Email, hashedPassword}
-
 	var newUser models.UserRegister
 	err = r.db.QueryRow(ctx, sql, values...).Scan(&newUser.Id, &newUser.Email, &newUser.Password)
 	if err != nil {
 		log.Println("Failed to insert into users: ", err.Error())
+		return models.UserRegister{}, err
+	}
+	// create user_id di table account
+	account := `INSERT INTO account (user_id) VALUES ($1)`
+
+	_, err = tx.Exec(ctx, account, newUser.Id)
+	if err != nil {
+		log.Println("Failed to insert empty account:", err)
+		return models.UserRegister{}, err
+	}
+
+	// Commit transaction
+	if err := tx.Commit(ctx); err != nil {
+		log.Println("Failed to commit transaction:", err)
 		return models.UserRegister{}, err
 	}
 
