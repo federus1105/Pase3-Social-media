@@ -1,0 +1,335 @@
+basePath: /
+definitions:
+  models.Comment:
+    properties:
+      id:
+        type: integer
+      teks:
+        type: string
+    type: object
+  models.GetUserPostsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Post'
+        type: array
+      success:
+        type: boolean
+    type: object
+  models.Like:
+    properties:
+      post_id:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  models.LikeResponse:
+    properties:
+      data:
+        $ref: '#/definitions/models.Like'
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  models.Post:
+    properties:
+      caption:
+        type: string
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  models.UserAuth:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  models.UserRegister:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Restful API craeted using gin for Koda Batch 3
+  title: PASE 3
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserAuth'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.UserAuth'
+      summary: Login
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Register
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserRegister'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.UserRegister'
+      summary: Register
+      tags:
+      - Authentication
+  /comment/{postingan_id}:
+    post:
+      consumes:
+      - application/json
+      description: Membuat komentar pada postingan tertentu, hanya untuk pengguna
+        yang telah login (JWT).
+      parameters:
+      - description: ID Postingan
+        in: path
+        name: postingan_id
+        required: true
+        type: integer
+      - description: Comment Body
+        in: body
+        name: comment
+        required: true
+        schema:
+          $ref: '#/definitions/models.Comment'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Comment'
+        "400":
+          description: Invalid request body or parameter
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new comment on a post
+      tags:
+      - Comments
+  /follow/{id_user}:
+    post:
+      consumes:
+      - application/json
+      description: Mengikuti pengguna lain. Pengguna harus login (menggunakan JWT).
+      parameters:
+      - description: ID pengguna yang akan di-follow
+        in: path
+        name: id_user
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Follow berhasil
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: ID user tidak valid
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized / tidak login
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Kesalahan server saat memproses follow
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Follow a user
+      tags:
+      - Follow
+  /like/{post_id}:
+    post:
+      consumes:
+      - application/json
+      description: Menyukai sebuah postingan. Pengguna harus login (menggunakan JWT).
+      parameters:
+      - description: ID Postingan yang ingin di-like
+        in: path
+        name: post_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.LikeResponse'
+        "400":
+          description: Invalid post_id
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Unauthorized: user not logged in'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Like a post
+      tags:
+      - Likes
+  /listpostingan/{following_id}:
+    get:
+      description: Mengambil semua postingan dari user yang diikuti. Hanya bisa melihat
+        postingan jika sudah follow.
+      parameters:
+      - description: ID user yang ingin dilihat postingannya
+        in: path
+        name: following_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GetUserPostsResponse'
+        "400":
+          description: ID tidak valid
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Unauthorized: user not logged in'
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 'Forbidden: belum mengikuti user tersebut'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Kesalahan server
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get posts of a user you follow
+      tags:
+      - Posts
+  /postingan:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Membuat postingan baru dengan caption dan optional image (multipart/form-data).
+        Pengguna harus login (JWT).
+      parameters:
+      - description: Caption untuk postingan
+        in: formData
+        name: caption
+        required: true
+        type: string
+      - description: Gambar untuk postingan
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Post'
+        "400":
+          description: 'Bad request: data tidak valid atau upload gagal'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Unauthorized: user not logged in'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error saat menyimpan data
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new post
+      tags:
+      - Posts
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
