@@ -9,6 +9,9 @@ This API provides basic endpoints for a social media application. The available 
 ## 📸 Preview
 > Swagger UI for Dokumentation: [`/swagger/index.html`](http://localhost:8080/swagger/index.html)
 
+## DESIGN SYSTEM
+![alt text](sistemDesign.png)
+
 ## 🚀 Features
 - 🔐 JWT Authentication (Login & Register)
 - 🧠 Redis Caching 
@@ -55,10 +58,6 @@ go mod tidy
 ### Run Project
 ```go
 go run .\cmd\main.go 
-```
-### Run Swagger
-```go
-swag init -g ./cmd/main.go
 ```
 
 ## 📬 Postman Collection
